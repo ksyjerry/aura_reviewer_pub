@@ -4,29 +4,11 @@ import json
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import os
+
 from dotenv import load_dotenv
-
-
-# def get_api_key():
-#     api_key = None
-#     # Streamlit Cloud에서 실행 중인 경우
-#     if st.runtime.exists():
-#         try:
-#             api_key = st.secrets["API_KEY"]
-#         except:
-#             st.error("Streamlit Cloud에서 API_KEY를 찾을 수 없습니다.")
-    
-#     # 로컬 환경에서 실행 중인 경우
-#     if not api_key:
-#         load_dotenv()
-#         api_key = os.getenv("API_KEY")
-#         if not api_key:
-#             st.error("로컬 환경에서 API_KEY를 찾을 수 없습니다.")
-    
-#     return api_key
-
-# openai_api_key = os.getenv("API_KEY")
-openai_api_key = st.secrets["API_KEY"]
+load_dotenv()
+openai_api_key = os.getenv("API_KEY")
+# openai_api_key = st.secrets["API_KEY"]
 
 class ExcelDocumentQA:
     def __init__(self):
