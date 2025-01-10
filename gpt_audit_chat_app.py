@@ -106,17 +106,19 @@ def main():
         }
         .title-text {
             color: #000000;
-            font-size: 32px;
+            font-size: 24px;
             font-weight: bold;
             margin-bottom: 0;
             padding-bottom: 5px;
-            margin-left: -20px;
+            margin-left: -10px;
+            line-height: 1.2;
+            padding-top: 10px;
         }
         </style>
     """, unsafe_allow_html=True)
 
     # 헤더 레이아웃
-    col1, col2 = st.columns([0.5, 4])
+    col1, col2 = st.columns([0.3, 4])
     with col1:
         st.image(
             "https://upload.wikimedia.org/wikipedia/commons/f/f2/Logo-pwc.png",
