@@ -1,0 +1,5 @@
+streamlit
+python-dotenv
+openai  # OpenAI API를 사용한다면
+pandas  # 엑셀 처리를 위해
+openpyxl  # 엑셀 파일 처리를 위해
