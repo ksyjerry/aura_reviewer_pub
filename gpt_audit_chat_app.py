@@ -82,8 +82,16 @@ def main():
     st.set_page_config(
         page_title="Audit Copilot - Reviewer",
         page_icon="📋",
-        layout="wide"  # 페이지 너비를 wide로 설정
+        layout="wide"
     )
+    
+    # 로고 표시 (상대 경로 사용)
+    try:
+        logo = Image.open("pwc_logo.png")
+        st.image(logo, width=200)
+    except:
+        # 로고 파일이 없는 경우 텍스트로 대체
+        st.title("Audit Copilot - Reviewer")
     
     initialize_session_state()
     
