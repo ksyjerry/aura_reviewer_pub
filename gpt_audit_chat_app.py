@@ -64,14 +64,34 @@ def convert_markdown_table_to_df(markdown_text):
     """마크다운 테이블을 DataFrame으로 변환"""
     try:
         # 마크다운 테이블 행을 분리
-        lines = markdown_text.strip().split('\n')
-        # 헤더와 구분선을 제외한 데이터 행만 추출
-        headers = [x.strip() for x in lines[0].split('|')[1:-1]]
+        lines = [line.strip() for line in markdown_text.split('\n') if line.strip()]
+        
+        # 헤더 행 찾기
+        header_row = None
+        for i, line in enumerate(lines):
+            if '| 대번호 |' in line:
+                header_row = i
+                break
+        
+        if header_row is None:
+            raise ValueError("헤더 행을 찾을 수 없습니다.")
+        
+        # 헤더와 데이터 추출
+        headers = [x.strip() for x in lines[header_row].split('|')[1:-1]]
         data = []
-        for line in lines[3:]:  # 헤더행과 구분선을 건너뛰고 데이터 행부터 처리
-            if line.strip():
-                row = [x.strip() for x in line.split('|')[1:-1]]
-                data.append(row)
+        for line in lines[header_row + 2:]:  # 구분선 건너뛰기
+            if line.startswith('|'):
+                # 정확히 분할하고 빈 요소 제거
+                row = [x.strip() for x in line.split('|')]
+                row = [x for x in row if x]  # 빈 요소 제거
+                if len(row) == len(headers):  # 열 개수가 일치하는 경우만 포함
+                    data.append(row)
+                else:
+                    st.warning(f"열 개수 불일치 발견: {len(row)} columns (expected {len(headers)})")
+        
+        if not data:
+            raise ValueError("변환할 데이터가 없습니다.")
+        
         return pd.DataFrame(data, columns=headers)
     except Exception as e:
         st.error(f"테이블 변환 중 오류 발생: {str(e)}")
@@ -106,7 +126,7 @@ def main():
         }
         .title-text {
             color: #000000;
-            font-size: 24px;
+            font-size: 42px;
             font-weight: bold;
             margin-bottom: 0;
             padding-bottom: 5px;
@@ -165,47 +185,58 @@ def main():
                         
                         # 프롬프트 수정
                         prompt = f"""
-                        첨부된 감사조서 체크리스트를 검토하고 다음 형식으로 결과를 작성해주세요.
+                        첨부된 감사조서 체크리스트를 검토하고 아래의 정확한 마크다운 표 형식으로만 결과를 작성해주세요.
+                        다른 설명이나 추가 텍스트 없이 표만 작성하세요.
 
                         | 대번호 | 체크항목 | 소번호 | 체크사항 | 확인여부 | 비고 |
                         |--------|----------|---------|-----------|-----------|------|
-                        | 1 | 재권제무조회서 | 1-1 | 매출채권, 매입채무 등 조서 상 Sampling 내역과 실제 발송(Control sheet 등)한 내역이 일치하는지 확인 | O/X | 1) 절차 확인 위치: [시트명/셀 위치]\\n2) 절차 내용: [발견된 구체적 절차 내용]\\n3) 누락된 절차: [있는 경우 기재]\\n[Aura Link](URL) |
+                        | 1 | 재권제무조회서 | 1-1 | 매출채권, 매입채무 등 조서 상 Sampling 내역과 실제 발송(Control sheet 등)한 내역이 일치하는지 확인 | O | 1) 절차 확인 위치: 매출채권조회 시트 B15:D25\\n2) 절차 수행내역: 매출채권 조회서 발송 리스트와 Control sheet 대사 수행\\n3) 절차 평가결과: 표본 선정 및 발송 내역 일치 확인됨\\n4) 특이사항: 미회수 조회서에 대한 대체절차 수행 예정\\n[Aura Link](https://aura.pwc.com/engagement/2024/workpaper/ar_confirmation) |
 
-                        중요: 
-                        1. 첨부된 체크리스트의 대번호, 체크항목, 소번호, 체크사항을 그대로 사용하세요.
-                        2. 확인여부는 다음 기준으로 가상의 결과를 생성하세요:
-                           - 약 70%는 'O'로 표시 (정상적으로 수행된 것으로 가정)
-                           - 약 30%는 'X'로 표시 (미흡하거나 누락된 것으로 가정)
-                        3. 비고란에는 각 항목별로 적절한 가상의 검토 내용을 작성하세요:
-                           - O인 경우: 정상적으로 수행된 것으로 가정하고 구체적인 확인 내용 작성
-                           - X인 경우: 미흡한 부분과 개선사항을 구체적으로 작성
+                        표 작성 규칙:
+                        1. 표 형식 규칙:
+                           - 헤더행과 구분행(|------|) 필수 포함
+                           - 각 행의 시작과 끝에 | 포함
+                           - 모든 열은 | 로 구분
+                           - 표 앞뒤 추가 텍스트 금지
 
-                        요구사항:
-                        1. '확인여부' 기준:
-                           - O: 해당 절차가 적절히 수행된 것으로 가정
-                           - X: 해당 절차가 미흡하거나 누락된 것으로 가정
-                        2. '비고' 열은 다음 내용을 포함할 것:
-                           a) 절차 확인 위치: 구체적인 시트명과 위치 (예: "매출채권조회 시트 B15:D25")
-                           b) 절차 내용: 구체적인 확인 내용이나 미흡사항
-                           c) 누락된 절차: X인 경우 구체적인 미비점
-                           d) Aura 링크 (각 체크항목 관련):
-                              - 재고자산 실사입회: https://aura.pwc.com/engagement/2024/workpaper/inventory_observation
-                              - 매출채권 조회확인: https://aura.pwc.com/engagement/2024/workpaper/ar_confirmation
-                              - 매입채무 조회확인: https://aura.pwc.com/engagement/2024/workpaper/ap_confirmation
-                              - 우발채무 및 약정사항: https://aura.pwc.com/engagement/2024/workpaper/contingent_liabilities
+                        2. 비고란 작성 규칙:
+                           확인여부가 'O'인 경우:
+                           - 1) 절차 확인 위치: [정확한 시트명과 셀 범위]
+                           - 2) 절차 수행내역: [수행한 감사절차의 구체적 내용]
+                           - 3) 절차 평가결과: [절차 수행 결과 및 결론]
+                           - 4) 특이사항: [발견된 특이사항이나 후속 절차]
+                           - [해당 Aura 문서 링크]
+
+                           확인여부가 'X'인 경우:
+                           - 1) 미비점: [구체적인 미비점 설명]
+                           - 2) 필요한 보완절차: [수행해야 할 추가 감사절차]
+                           - 3) 개선권고사항: [구체적인 개선 방안]
+                           - 4) 조치계획: [조치 일정 및 담당자]
+                           - [해당 Aura 문서 링크]
+
+                        3. Aura 링크:
+                           - 재무제표검토: https://aura.pwc.com/engagement/2024/workpaper/fs_review
+                           - 재권제무조회서: https://aura.pwc.com/engagement/2024/workpaper/ar_confirmation
+                           - 법률조회서: https://aura.pwc.com/engagement/2024/workpaper/legal_confirmation
+                           - 재고자산실사: https://aura.pwc.com/engagement/2024/workpaper/inventory_observation
+
+                        4. 확인여부 기준:
+                           - O: 해당 절차가 적절히 수행되고 문서화된 경우
+                           - X: 절차가 미흡하거나 문서화가 불충분한 경우
 
                         체크리스트 데이터: {json_data}
-
-                        위 체크리스트의 각 항목을 검토하고 결과를 표 형식으로 작성해주세요.
                         """
                         
                         messages = [
                             {
                                 "role": "system", 
-                                "content": """당신은 풍부한 경험을 가진 감사 전문가입니다. 
-                                첨크리스트의 각 항목에 대해 현실적인 가상의 검토 결과를 생성합니다.
-                                약 70%는 정상 수행(O), 30%는 미흡(X)한 것으로 가정하여 
-                                실제 감사 현장에서 발생할 수 있는 현실적인 시나리오를 제시합니다."""
+                                "content": """당신은 풍부한 경험을 가진 감사 전문가입니다.
+                                각 감사절차에 대해 다음과 같이 검토하세요:
+                                1. 절차의 수행 위치를 정확히 파악
+                                2. 수행된 절차의 내용을 구체적으로 평가
+                                3. 절차의 적정성과 문서화 수준을 판단
+                                4. 발견된 미비점과 개선사항을 명확히 제시
+                                표 형식이 깨지지 않도록 주의하며, 비고란은 상세하고 전문적으로 작성하세요."""
                             },
                             {"role": "user", "content": prompt}
                         ]
@@ -371,7 +402,7 @@ def main():
         # 이전 메시지 표시
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
-                # 실제 줄바꿈으로 변환하고 HTML로 렌더링
+                # \n을 <br>로 변환하고 HTML로 렌더링
                 content = message["content"].replace('\\n', '<br>')
                 st.markdown(content, unsafe_allow_html=True)
         
@@ -391,7 +422,7 @@ def main():
                         if chunk.choices[0].delta.content is not None:
                             content = chunk.choices[0].delta.content
                             full_response += content
-                            # HTML 줄바꿈으로 변환하여 표시
+                            # \n을 <br>로 변환하여 표시
                             display_response = full_response.replace('\\n', '<br>')
                             response_container.markdown(display_response + "▌", unsafe_allow_html=True)
                     
