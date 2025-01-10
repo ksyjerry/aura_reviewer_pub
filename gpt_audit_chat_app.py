@@ -85,14 +85,6 @@ def main():
         layout="wide"
     )
     
-    # 로고 표시 (상대 경로 사용)
-    try:
-        logo = Image.open("pwc_logo.png")
-        st.image(logo, width=200)
-    except:
-        # 로고 파일이 없는 경우 텍스트로 대체
-        st.title("Audit Copilot - Reviewer")
-    
     initialize_session_state()
     
     # chatbot 인스턴스 생성
@@ -120,31 +112,16 @@ def main():
             padding-bottom: 5px;
             margin-left: -20px;
         }
-        .stTextInput > div > div > input {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-        }
-        .chat-message {
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .user-message {
-            background-color: #f8f9fa;
-        }
-        .bot-message {
-            background-color: #fff3f3;
-        }
         </style>
     """, unsafe_allow_html=True)
 
     # 헤더 레이아웃
     col1, col2 = st.columns([0.5, 4])
     with col1:
-        logo = Image.open(r"C:\Users\jkim564\Documents\ai_apps\Audit Reviewer\Aura Review_deploy\pwc_logo.png")
-        st.image(logo, width=60)
+        st.image(
+            "https://upload.wikimedia.org/wikipedia/commons/f/f2/Logo-pwc.png",
+            width=60
+        )
     with col2:
         st.markdown('<p class="title-text">Audit Copilot - Reviewer</p>', unsafe_allow_html=True)
     

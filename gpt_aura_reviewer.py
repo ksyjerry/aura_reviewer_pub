@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import os
 
-from dotenv import load_dotenv
-load_dotenv()
-openai_api_key = os.getenv("API_KEY")
-# openai_api_key = st.secrets["API_KEY"]
+# from dotenv import load_dotenv
+# load_dotenv()
+# openai_api_key = os.getenv("API_KEY")
+openai_api_key = st.secrets["API_KEY"]
 
 class ExcelDocumentQA:
     def __init__(self):
